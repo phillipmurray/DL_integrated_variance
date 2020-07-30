@@ -5,6 +5,9 @@ from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.layers import Dense
 from scipy.special import factorial, factorial2
 
+tf.keras.backend.set_floatx('float64')
+
+
 def gaussian_moment(p):
     if p % 2 == 0:
         return factorial2(p-1)

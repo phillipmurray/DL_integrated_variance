@@ -1,5 +1,6 @@
 import numpy as np
 import tensorflow as tf
+from src.stoch_vol import ExpOU
 
 class SemiMartingale():
     def __init__(self, X_0, vol, **kwargs):
@@ -10,7 +11,7 @@ class SemiMartingale():
         self.n_timesteps = None
         self.paths = None
 
-    def _generate_vol(self, vol, n_paths, n_timesteps, seed=None):
+    def _generate_vol(self, vol, n_paths, n_timesteps, seed=None, **kwargs):
         self.seed = seed
         np.random.seed(seed)
         if isinstance(vol, float):
@@ -21,16 +22,18 @@ class SemiMartingale():
             else:
                 return vol
         elif isinstance(vol, str):
-            pass
+            if vol == 'expou':
+                theta, beta = kwargs.get('theta', 1.0), kwargs.get('beta', 0.2)
+                return ExpOU(theta, beta).generate(n_paths, n_timesteps, seed)
 
 
-    def generate(self, n_paths, n_timesteps, seed=None):
+    def generate(self, n_paths, n_timesteps, seed=None, **kwargs):
         self.seed = seed
         np.random.seed(self.seed)
-        vol_paths = self._generate_vol(self.vol, n_paths, n_timesteps)
+        vol_paths = self._generate_vol(self.vol, n_paths, n_timesteps, **kwargs)
         self.vol_paths = vol_paths
         W = np.random.normal(loc=0.0, scale=np.sqrt(1/n_timesteps), size=(n_paths, n_timesteps))
-        X = self.X_0 + np.cumsum(self.vol * W, axis=-1)
+        X = self.X_0 + np.cumsum(self.vol_paths * W, axis=-1)
         X = np.concatenate([np.tile(self.X_0, (n_paths, 1)), X], axis=-1)
         self.paths = X
         self.n_paths = n_paths
