@@ -6,7 +6,7 @@ from tensorflow.keras.layers import Dense
 from tensorflow.keras.optimizers import Adam
 from scipy.special import factorial, factorial2
 
-tf.keras.backend.set_floatx('float64')
+K.set_floatx('float64')
 
 
 def gaussian_moment(p):
