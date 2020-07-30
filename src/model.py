@@ -2,6 +2,7 @@ import numpy as np
 import tensorflow as tf
 import tensorflow.keras.backend as K
 from tensorflow.keras.models import Model, Sequential
+from tensorflow.keras.layers import Dense
 from scipy.special import factorial, factorial2
 
 def gaussian_moment(p):
@@ -42,8 +43,45 @@ class GaussianKernel():
 
 
 
+
+def compute_pairwise_distances(x, y):
+    """Computes the squared pairwise Euclidean distances between x and y.
+    Args:
+    x: a tensor of shape [num_x_samples, num_features]
+    y: a tensor of shape [num_y_samples, num_features]
+    Returns:
+    a distance matrix of dimensions [num_x_samples, num_y_samples].
+    Raises:
+    ValueError: if the inputs do no matched the specified dimensions.
+    """
+
+    if not len(x.get_shape()) == len(y.get_shape()) == 2:
+        raise ValueError('Both inputs should be matrices.')
+
+    if x.get_shape().as_list()[1] != y.get_shape().as_list()[1]:
+        raise ValueError('The number of features should be the same.')
+
+    norm = lambda x: tf.reduce_sum(tf.square(x), 1)
+    return tf.transpose(norm(tf.expand_dims(x, 2) - tf.transpose(y)))
+
+def gaussian_kernel_matrix(x, y, length_scale=1.0):
+    """Computes a Guassian Radial Basis Kernel between the samples of x and y.
+    We create a sum of multiple gaussian kernels each having a width sigma_i.
+    Args:
+    x: a tensor of shape [num_samples, num_features]
+    y: a tensor of shape [num_samples, num_features]
+    sigmas: a tensor of floats which denote the widths of each of the
+    gaussians in the kernel.
+    Returns:
+    A tensor of shape [num_samples{x}, num_samples{y}] with the RBF kernel.
+    """
+    beta = 1. / (2. * length_scale)
+    dist = compute_pairwise_distances(x, y)
+    s = beta * tf.reshape(dist, (1, -1))
+    return tf.reshape(tf.reduce_sum(tf.exp(-s), 0), tf.shape(dist))
+
 class MMDLoss():
-    def __init__(self, kernel=None, **kwargs):
+    def __init__(self, kernel=gaussian_kernel_matrix, **kwargs):
         self.length_scale = kwargs.get('length_scale')
         self.kernel = self._set_kernel(kernel)
 
@@ -59,9 +97,27 @@ class MMDLoss():
 
     def __call__(self, total_increments, integrated_var):
         gen_sample = total_increments / K.sqrt(integrated_var)
-        z_sample = tf.random.normal(shape=gen_sample.shape)
-        return self.kernel()
+        z_sample = tf.random.normal(shape=gen_sample.get_shape())
+        cost = self.kernel(gen_sample, gen_sample)
+        cost += self.kernel(z_sample, z_sample)
+        cost -= 2*self.kernel(gen_sample, z_sample)
+        #Ensure loss is non-negative
+        cost = tf.where(cost > 0, cost, 0, name='value')
+        return cost
+
+
 
 class FFNetwork(Model):
-    def __init__(self):
-        pass
+    def __init__(self, n_layers, h_dims=64):
+        layers = []
+        for _ in range(n_layers):
+            layers.append(Dense(h_dims, activation='relu'))
+        layers.append(Dense(1, activation='softmax'))
+        self.layers = layers
+        self.model = Sequential(layers)
+
+    def call(self, x):
+        x = self.model(x)
+        return x
+
+
