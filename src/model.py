@@ -1,6 +1,7 @@
 import numpy as np
 import tensorflow as tf
 import tensorflow.keras.backend as K
+from tensorflow.keras.models import Model, Sequential
 from scipy.special import factorial, factorial2
 
 def gaussian_moment(p):
@@ -60,3 +61,7 @@ class MMDLoss():
         gen_sample = total_increments / K.sqrt(integrated_var)
         z_sample = tf.random.normal(shape=gen_sample.shape)
         return self.kernel()
+
+class FFNetwork(Model):
+    def __init__(self):
+        pass
