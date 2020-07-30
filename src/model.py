@@ -89,18 +89,15 @@ class MMDLoss():
         if not isinstance(kernel, str):
             return kernel
         else:
-            if kernel in ['rbf', 'gaussian']:
-                if self.length_scale is not None:
-                    return GaussianKernel(length_scale=self.length_scale)
-                else:
-                    return GaussianKernel()
+            pass
 
     def __call__(self, total_increments, integrated_var):
         gen_sample = total_increments / K.sqrt(integrated_var)
-        z_sample = tf.random.normal(shape=gen_sample.get_shape())
-        cost = self.kernel(gen_sample, gen_sample)
-        cost += self.kernel(z_sample, z_sample)
-        cost -= 2*self.kernel(gen_sample, z_sample)
+        gen_sample = K.reshape(gen_sample, (gen_sample.shape[0], 1))
+        z_sample = tf.random.normal(shape=gen_sample.get_shape(), dtype='float64')
+        cost = tf.reduce_mean(self.kernel(gen_sample, gen_sample))
+        cost += tf.reduce_mean(self.kernel(z_sample, z_sample))
+        cost -= tf.reduce_mean(2*self.kernel(gen_sample, z_sample))
         #Ensure loss is non-negative
         cost = tf.where(cost > 0, cost, 0, name='value')
         return cost
@@ -109,15 +106,17 @@ class MMDLoss():
 
 class FFNetwork(Model):
     def __init__(self, n_layers, h_dims=64):
+        super(FFNetwork, self).__init__()
         layers = []
         for _ in range(n_layers):
             layers.append(Dense(h_dims, activation='relu'))
-        layers.append(Dense(1, activation='softmax'))
-        self.layers = layers
-        self.model = Sequential(layers)
+        layers.append(Dense(1, activation='softplus'))
+        self.h_layers = layers
+
 
     def call(self, x):
-        x = self.model(x)
+        for layer in self.h_layers:
+            x = layer(x)
         return x
 
 

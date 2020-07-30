@@ -1,4 +1,5 @@
 import numpy as np
+import tensorflow as tf
 
 class SemiMartingale():
     def __init__(self, X_0, vol, **kwargs):
@@ -12,13 +13,22 @@ class SemiMartingale():
     def _generate_vol(self, vol, n_paths, n_timesteps, seed=None):
         self.seed = seed
         np.random.seed(seed)
+        if isinstance(vol, float):
+            return vol * np.ones((n_paths, n_timesteps))
+        elif isinstance(vol, np.ndarray):
+            if vol.shape != (n_paths, n_timesteps):
+                raise ValueError("Vol must have same dimensions as path")
+            else:
+                return vol
+        elif isinstance(vol, str):
+            pass
+
 
     def generate(self, n_paths, n_timesteps, seed=None):
         self.seed = seed
         np.random.seed(self.seed)
-        if isinstance(self.vol, str):
-            vol = self._generate_vol(self.vol, n_paths, n_timesteps)
-            self.vol = vol
+        vol_paths = self._generate_vol(self.vol, n_paths, n_timesteps)
+        self.vol_paths = vol_paths
         W = np.random.normal(loc=0.0, scale=np.sqrt(1/n_timesteps), size=(n_paths, n_timesteps))
         X = self.X_0 + np.cumsum(self.vol * W, axis=-1)
         X = np.concatenate([np.tile(self.X_0, (n_paths, 1)), X], axis=-1)
@@ -27,8 +37,21 @@ class SemiMartingale():
         self.n_timesteps = n_timesteps
         return X
 
+    def generate_from_vol(self, seed=None):
+        self.seed = seed
+        np.random.seed(seed)
+        n_paths, n_timesteps = self.vol.shape
+        self.vol_paths = self.vol
+        W = np.random.normal(loc=0.0, scale=np.sqrt(1 / n_timesteps), size=(n_paths, n_timesteps))
+        X = self.X_0 + np.cumsum(self.vol * W, axis=-1)
+        X = np.concatenate([np.tile(self.X_0, (n_paths, 1)), X], axis=-1)
+        self.paths = X
+        self.n_paths = n_paths
+        self.n_timesteps = n_timesteps
+        return X
+
     def integrated_variance(self, return_mean=False):
-        int_var = np.cumsum(self.vol**2, axis=-1)
+        int_var = np.mean(self.vol_paths**2, axis=-1)
         if return_mean:
             int_var = np.mean(int_var, axis=0)
         return int_var
@@ -50,3 +73,6 @@ class SemiMartingale():
             increments = self.get_total_increments()
             integrated_var = self.integrated_variance()
             return increments / integrated_var
+
+    def _to_tensor(self):
+        return tf.constant(self.paths)
