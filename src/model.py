@@ -3,6 +3,7 @@ import tensorflow as tf
 import tensorflow.keras.backend as K
 from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.layers import Dense
+from tensorflow.keras.optimizers import Adam
 from scipy.special import factorial, factorial2
 
 tf.keras.backend.set_floatx('float64')
@@ -107,19 +108,48 @@ class MMDLoss():
 
 
 
+@tf.function
+def create_train_dataset(x_train, batch_size):
+    train_dataset = tf.data.Dataset.from_tensor_slices(x_train)
+    train_dataset = train_dataset.batch(batch_size)
+    return train_dataset
+
+
 class FFNetwork(Model):
-    def __init__(self, n_layers, h_dims=64):
+    def __init__(self, n_layers, h_dims=64, loss=None):
         super(FFNetwork, self).__init__()
         layers = []
         for _ in range(n_layers):
             layers.append(Dense(h_dims, activation='relu'))
         layers.append(Dense(1, activation='softplus'))
         self.h_layers = layers
-
+        self.loss = loss
 
     def call(self, x):
         for layer in self.h_layers:
             x = layer(x)
         return x
+
+    def _add_loss(self, loss):
+        self.loss = loss
+
+    def train(self, x_train, num_epochs, batch_size, lr):
+        optimizer = Adam(lr=lr)
+        x_train = create_train_dataset(x_train, batch_size)
+
+        @tf.function
+        def train_step(x_batch):
+            total_increment = x_batch[:,-1] - x_batch[:,0]
+            with tf.GradientTape() as tape:
+                int_var = self.call(x_batch)
+                int_var = K.reshape(int_var, x_batch.shape[0     ])
+                loss_value = self.loss(total_increment, int_var)
+            grads = tape.gradient(loss_value, self.trainable_weights)
+            optimizer.apply_gradients(zip(grads, self.trainable_weights))
+            return loss_value
+
+        for epoch in range(num_epochs):
+            for step, x_batch in enumerate(x_train):
+                train_step(x_batch)
 
 
