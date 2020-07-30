@@ -57,6 +57,6 @@ def plot_hist(x_batch, int_var):
     total_increment = x_batch[:, -1] - x_batch[:, 0]
     gen_z = total_increment / np.sqrt(int_var)
     x = np.linspace(-3.0, 3.0, 100)
-    plt.hist(gen_z)
+    plt.hist(gen_z, density=True, bins=10)
     plt.plot(x, norm.pdf(x, 0.0, 1.0))
     plt.show()

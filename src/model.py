@@ -5,12 +5,10 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.optimizers import Adam
 from scipy.special import factorial
-from tqdm.notebook import tqdm
+from tqdm import tqdm_notebook
 from src.utils import *
 
 K.set_floatx('float64')
-
-
 
 
 class MomentLoss():
@@ -33,12 +31,6 @@ class MomentLoss():
         sample_moments = K.stack([K.mean(z_sample**p, axis=0) for p in range(1, self.degree+1)])
         moment_diffs = K.abs(sample_moments - gaussian_moments)
         return K.mean(self.weights * moment_diffs**self.p_norm)
-
-
-
-
-
-
 
 class MMDLoss():
     def __init__(self, kernel=gaussian_kernel_matrix, **kwargs):
@@ -112,17 +104,18 @@ class FFNetwork(Model):
         x_train = create_train_dataset(x_train, batch_size)
         losses = []
         mses = []
-        for epoch in tqdm(range(num_epochs), desc='Training'):
-            with tqdm(total=n_steps, desc=f'Epoch {epoch}') as progress:
+        for epoch in range(num_epochs):
+            with tqdm_notebook(total=n_steps, desc=f'Epoch {epoch+1} of {num_epochs}') as progress:
                 for step, x_batch in enumerate(x_train):
                     progress.update()
                     loss_val = self.train_step(x_batch)
-                    losses.append(loss_val)
-            int_var = self(x_batch).numpy()
+                    losses.append(loss_val.numpy())
+            int_var = self(x_batch).numpy().squeeze()
             if true_int_var:
                 mse_val = self._mse_metric(true_int_var, int_var)
-                mses.append(mse_val)
+                mses.append(mse_val.numpy())
             if plotting:
                 plot_hist(x_batch, int_var)
+        return losses, mses
 
 
