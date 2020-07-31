@@ -73,6 +73,7 @@ class FFNetwork(Model):
         layers = []
         for _ in range(n_layers):
             layers.append(Dense(h_dims, activation='relu'))
+        layers.append(Dense(h_dims, activation=None))
         layers.append(Dense(1, activation='softplus'))
         self.h_layers = layers
         self.loss = loss
