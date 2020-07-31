@@ -122,3 +122,11 @@ class FFNetwork(Model):
         self.history = {'loss': losses, 'mse': mses}
         return self.history
 
+    def predict_iv(self, x):
+        iv = self(x).numpy()
+        return iv.squeeze()
+
+    def predict_z(self, x):
+        iv = self.predict_iv(x)
+        z = (x[:,-1] - x[:,0])/np.sqrt(iv)
+        return z
