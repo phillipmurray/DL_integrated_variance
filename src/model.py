@@ -62,6 +62,11 @@ def create_train_dataset(x_train, batch_size):
     train_dataset = train_dataset.batch(batch_size)
     return train_dataset
 
+
+def _mse_metric(var_true, var_pred):
+    return tf.reduce_mean((var_true - var_pred)**2)
+
+
 class FFNetwork(Model):
     def __init__(self, n_layers, h_dims=64, loss=None):
         super(FFNetwork, self).__init__()
@@ -84,9 +89,6 @@ class FFNetwork(Model):
     def _set_lr(self, lr):
         if lr is not None:
             self.optimizer = Adam(lr=lr)
-
-    def _mse_metric(self, var_true, var_pred):
-        return tf.reduce_mean((var_true - var_pred)**2)
 
     def train_step(self, x_batch):
         total_increment = x_batch[:, -1] - x_batch[:, 0]
@@ -112,10 +114,11 @@ class FFNetwork(Model):
                     losses.append(loss_val.numpy())
             int_var = self(x_batch).numpy().squeeze()
             if true_int_var:
-                mse_val = self._mse_metric(true_int_var, int_var)
+                mse_val = _mse_metric(true_int_var, int_var)
                 mses.append(mse_val.numpy())
             if plotting:
-                plot_hist(x_batch, int_var)
-        return losses, mses
+                plot_hist(x_batch, int_var, true_int_var)
 
+        self.history = {'loss': losses, 'mse': mses}
+        return self.history
 

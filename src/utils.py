@@ -52,11 +52,14 @@ def gaussian_kernel_matrix(x, y, length_scale=1.0):
     s = beta * tf.reshape(dist, (1, -1))
     return tf.reshape(tf.reduce_sum(tf.exp(-s), 0), tf.shape(dist))
 
-def plot_hist(x_batch, int_var):
+def plot_hist(x_batch, int_var, true_int_var=None, n_bins=20):
 
     total_increment = x_batch[:, -1] - x_batch[:, 0]
     gen_z = total_increment / np.sqrt(int_var)
     x = np.linspace(-3.0, 3.0, 100)
-    plt.hist(gen_z, density=True, bins=10)
+    if true_int_var is not None:
+        plt.hist(true_int_var, bins=np.linspace(-3,3,n_bins), density=True, label='True')
+    plt.hist(gen_z, bins=np.linspace(-3,3,n_bins), density=True, label='NN')
     plt.plot(x, norm.pdf(x, 0.0, 1.0))
+    plt.legend()
     plt.show()

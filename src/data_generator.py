@@ -75,7 +75,7 @@ class SemiMartingale():
         if self.paths is not None:
             increments = self.get_total_increments()
             integrated_var = self.integrated_variance()
-            return increments / integrated_var
+            return increments / np.sqrt(integrated_var)
 
     def _to_tensor(self):
         return tf.constant(self.paths)
