@@ -63,3 +63,20 @@ def plot_hist(x_batch, int_var, true_int_var=None, n_bins=20):
     plt.plot(x, norm.pdf(x, 0.0, 1.0))
     plt.legend()
     plt.show()
+
+def set_plot_params():
+    plt.rcParams.update({
+        'mathtext.fontset': 'cm',
+        'axes.titlesize': 12,
+        'axes.labelsize': 12,
+        'xtick.labelsize': 8,
+        'ytick.labelsize': 8,
+        'legend.fontsize': 10,
+        'axes.linewidth': 0.5,
+        'lines.linewidth': 1.,
+        'axes.labelpad': 2.,
+        'figure.dpi': 100,
+        'figure.figsize': (6, 6),
+        'legend.frameon': False,
+        'animation.html': 'html5'
+    })
