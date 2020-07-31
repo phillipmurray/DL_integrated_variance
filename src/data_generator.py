@@ -8,12 +8,15 @@ class SemiMartingale():
         self.vol = vol
         self.seed = None
         self.n_paths = None
+        self.total_timesteps = None
         self.n_timesteps = None
         self.paths = None
 
-    def _generate_vol(self, vol, n_paths, n_timesteps, seed=None, **kwargs):
+    def _generate_vol(self, vol, n_paths, total_timesteps, n_timesteps=None, seed=None, **kwargs):
         self.seed = seed
         np.random.seed(seed)
+        if n_timesteps is None:
+            n_timesteps = total_timesteps
         if isinstance(vol, float):
             return vol * np.ones((n_paths, n_timesteps))
         elif isinstance(vol, np.ndarray):
@@ -24,20 +27,23 @@ class SemiMartingale():
         elif isinstance(vol, str):
             if vol == 'expou':
                 theta, beta = kwargs.get('theta', 1.0), kwargs.get('beta', 0.2)
-                return ExpOU(theta, beta).generate(n_paths, n_timesteps, seed)
+                return ExpOU(theta, beta).generate(n_paths, total_timesteps, n_timesteps, seed)
 
 
-    def generate(self, n_paths, n_timesteps, seed=None, **kwargs):
+    def generate(self, n_paths, total_timesteps, n_timesteps=None, seed=None, **kwargs):
         self.seed = seed
         np.random.seed(self.seed)
-        vol_paths = self._generate_vol(self.vol, n_paths, n_timesteps, **kwargs)
+        if n_timesteps is None:
+            n_timesteps = total_timesteps
+        vol_paths = self._generate_vol(self.vol, n_paths, total_timesteps, n_timesteps, **kwargs)
         self.vol_paths = vol_paths
-        W = np.random.normal(loc=0.0, scale=np.sqrt(1/n_timesteps), size=(n_paths, n_timesteps))
+        W = np.random.normal(loc=0.0, scale=np.sqrt(1/total_timesteps), size=(n_paths, n_timesteps))
         X = self.X_0 + np.cumsum(self.vol_paths * W, axis=-1)
         X = np.concatenate([np.tile(self.X_0, (n_paths, 1)), X], axis=-1)
         self.paths = X
         self.n_paths = n_paths
         self.n_timesteps = n_timesteps
+        self.total_timesteps = total_timesteps
         return X
 
     def generate_from_vol(self, seed=None):
@@ -45,16 +51,17 @@ class SemiMartingale():
         np.random.seed(seed)
         n_paths, n_timesteps = self.vol.shape
         self.vol_paths = self.vol
-        W = np.random.normal(loc=0.0, scale=np.sqrt(1 / n_timesteps), size=(n_paths, n_timesteps))
+        W = np.random.normal(loc=0.0, scale=np.sqrt(1/n_timesteps), size=(n_paths, n_timesteps))
         X = self.X_0 + np.cumsum(self.vol * W, axis=-1)
         X = np.concatenate([np.tile(self.X_0, (n_paths, 1)), X], axis=-1)
         self.paths = X
         self.n_paths = n_paths
         self.n_timesteps = n_timesteps
+        self.total_timesteps = n_timesteps
         return X
 
     def integrated_variance(self, return_mean=False):
-        int_var = np.mean(self.vol_paths**2, axis=-1)
+        int_var = np.sum(self.vol_paths**2, axis=-1)/self.total_timesteps
         if return_mean:
             int_var = np.mean(int_var, axis=0)
         return int_var
@@ -79,3 +86,11 @@ class SemiMartingale():
 
     def _to_tensor(self):
         return tf.constant(self.paths)
+
+    def add_noise(self, sd=0.5, seed=None):
+        self.seed = seed
+        np.random.seed(seed)
+        if self.paths is not None:
+            noise = np.random.normal(scale=sd, size=self.paths.shape)
+        noisy_paths = self.paths + noise
+        return noisy_paths

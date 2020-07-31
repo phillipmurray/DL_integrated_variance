@@ -73,6 +73,9 @@ def plot_hist(x_batch, int_var, true_int_var=None, n_bins=20):
     plt.show()
 
 def set_plot_params():
+    """Useful function to set parameters for inline matplotlib plots
+    in Jupyter notebooks.
+    """
     plt.rcParams.update({
         'mathtext.fontset': 'cm',
         'axes.titlesize': 12,

@@ -5,10 +5,12 @@ class ExpOU():
         self.beta = beta
         self.theta = theta
 
-    def generate(self, n_paths, n_timesteps, seed=None):
+    def generate(self, n_paths, total_timesteps, n_timesteps=None, seed=None):
         self.seed=seed
         np.random.seed(seed)
-        dt = np.sqrt(1/n_timesteps)
+        if n_timesteps is None:
+            n_timesteps = total_timesteps
+        dt = np.sqrt(1/total_timesteps)
         log_vol = np.zeros((n_paths, n_timesteps))
         log_vol[:,0] = np.random.normal(size=n_paths, loc=0.0, scale=np.sqrt(1/(2*self.theta)))
         for t in range(1, n_timesteps):
