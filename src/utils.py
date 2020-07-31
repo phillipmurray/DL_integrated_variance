@@ -52,6 +52,14 @@ def gaussian_kernel_matrix(x, y, length_scale=1.0):
     s = beta * tf.reshape(dist, (1, -1))
     return tf.reshape(tf.reduce_sum(tf.exp(-s), 0), tf.shape(dist))
 
+class GaussianKernel:
+    def __init__(self, length_scale):
+        self.length_scale = length_scale
+    def __call__(self, x, y):
+        return gaussian_kernel_matrix(x, y, self.length_scale)
+
+
+
 def plot_hist(x_batch, int_var, true_int_var=None, n_bins=20):
 
     total_increment = x_batch[:, -1] - x_batch[:, 0]

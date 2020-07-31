@@ -11,7 +11,10 @@ from src.utils import *
 K.set_floatx('float64')
 
 
-class MomentLoss():
+class MomentLoss:
+    """Computes a loss using an Lp norm of the difference between between the moments
+    of the training data and a standard Gaussian.
+     """
     def __init__(self, degree=4, p_norm=2, weights=None):
         self.degree = degree
         self.p_norm = p_norm
@@ -32,14 +35,17 @@ class MomentLoss():
         moment_diffs = K.abs(sample_moments - gaussian_moments)
         return K.mean(self.weights * moment_diffs**self.p_norm)
 
-class MMDLoss():
-    def __init__(self, kernel=gaussian_kernel_matrix, **kwargs):
+class MMDLoss:
+    """Computes a MMD loss using a kernel function (the Guassian Radial Basis Kernel
+    by defauly) using samples from the training data and from a standard Gaussian.
+     """
+    def __init__(self, kernel=GaussianKernel, **kwargs):
         self.length_scale = kwargs.get('length_scale')
-        self.kernel = self._set_kernel(kernel)
+        self._set_kernel(kernel)
 
     def _set_kernel(self, kernel):
         if not isinstance(kernel, str):
-            return kernel
+            self.kernel = kernel(length_scale=self.length_scale)
         else:
             pass
 
@@ -53,6 +59,23 @@ class MMDLoss():
         #Ensure loss is non-negative
         cost = tf.where(cost > 0, cost, 0, name='value')
         return cost
+
+class RBFMMDLoss:
+    """Computes a MMD loss using the Guassian Radial Basis Kernel
+     using the analytic form.
+     """
+    def __init__(self, kernel=gaussian_kernel_matrix, length_scale=1.0):
+        self.length_scale = length_scale
+        self.kernel = GaussianKernel(length_scale=self.length_scale)
+
+    def __call__(self, total_increments, integrated_var):
+        gen_sample = total_increments / K.sqrt(integrated_var)
+        gen_sample = K.reshape(gen_sample, (gen_sample.shape[0], 1))
+        cost = tf.reduce_mean(self.kernel(gen_sample, gen_sample))
+        cost -= (self.length_scale/(1 + self.length_scale))**0.5 * tf.reduce_mean(2*K.exp(-gen_sample**2/(2*(1 + self.length_scale))))
+        #No need for last term since that is independent of the training data
+        return cost
+
 
 
 
@@ -73,6 +96,7 @@ class FFNetwork(Model):
         layers = []
         for _ in range(n_layers):
             layers.append(Dense(h_dims, activation='relu'))
+        layers.append(Dense(h_dims, activation=None))
         layers.append(Dense(1, activation='softplus'))
         self.h_layers = layers
         self.loss = loss
@@ -122,3 +146,11 @@ class FFNetwork(Model):
         self.history = {'loss': losses, 'mse': mses}
         return self.history
 
+    def predict_iv(self, x):
+        iv = self(x).numpy()
+        return iv.squeeze()
+
+    def predict_z(self, x):
+        iv = self.predict_iv(x)
+        z = (x[:,-1] - x[:,0])/np.sqrt(iv)
+        return z
