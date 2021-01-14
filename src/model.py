@@ -29,10 +29,10 @@ class MomentLoss:
             return 1/factorial(np.linspace(0,self.degree, num=self.degree))
 
     def __call__(self, total_increments, integrated_var):
-        gaussian_moments = K.constant([gaussian_moment(p) for p in range(1, self.degree+1)])
-        z_sample = total_increments / K.sqrt(integrated_var)
-        sample_moments = K.stack([K.mean(z_sample**p, axis=0) for p in range(1, self.degree+1)])
-        moment_diffs = K.abs(sample_moments - gaussian_moments)
+        gaussian_moments = tf.constant([gaussian_moment(p) for p in range(1, self.degree+1)])
+        z_sample = total_increments / tf.math.sqrt(integrated_var)
+        sample_moments = tf.stack([K.mean(z_sample**p, axis=0) for p in range(1, self.degree+1)])
+        moment_diffs = tf.math.abs(sample_moments - gaussian_moments)
         return K.mean(self.weights * moment_diffs**self.p_norm)
 
 class MMDLoss:
@@ -50,8 +50,8 @@ class MMDLoss:
             pass
 
     def __call__(self, total_increments, integrated_var):
-        gen_sample = total_increments / K.sqrt(integrated_var)
-        gen_sample = K.reshape(gen_sample, (gen_sample.shape[0], 1))
+        gen_sample = total_increments / tf.math.sqrt(integrated_var)
+        gen_sample = tf.reshape(gen_sample, (gen_sample.shape[0], 1))
         z_sample = tf.random.normal(shape=gen_sample.get_shape(), dtype='float64')
         cost = tf.reduce_mean(self.kernel(gen_sample, gen_sample))
         cost += tf.reduce_mean(self.kernel(z_sample, z_sample))
@@ -69,8 +69,8 @@ class RBFMMDLoss:
         self.kernel = GaussianKernel(length_scale=self.length_scale)
 
     def __call__(self, total_increments, integrated_var):
-        gen_sample = total_increments / K.sqrt(integrated_var)
-        gen_sample = K.reshape(gen_sample, (gen_sample.shape[0], 1))
+        gen_sample = total_increments / tf.math.sqrt(integrated_var)
+        gen_sample = tf.reshape(gen_sample, (gen_sample.shape[0], 1))
         cost = tf.reduce_mean(self.kernel(gen_sample, gen_sample))
         cost -= (self.length_scale/(1 + self.length_scale))**0.5 * tf.reduce_mean(2*K.exp(-gen_sample**2/(2*(1 + self.length_scale))))
         #No need for last term since that is independent of the training data
