@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Dense, SimpleRNN, LSTM
 from tensorflow.keras.optimizers import Adam
 from scipy.special import factorial
 from tqdm import tqdm_notebook
@@ -33,8 +33,8 @@ class MomentLoss:
         return tf.reduce_mean(self.weights * moment_diffs**self.p_norm)
 
 class MMDLoss:
-    """Computes a MMD loss using a kernel function (the Guassian Radial Basis Kernel
-    by defauly) using samples from the training data and from a standard Gaussian.
+    """Computes a MMD loss using a kernel function (the Gaussian Radial Basis Kernel
+    by default) using samples from the training data and from a standard Gaussian.
      """
     def __init__(self, kernel=GaussianKernel, **kwargs):
         self.length_scale = kwargs.get('length_scale')
@@ -58,7 +58,7 @@ class MMDLoss:
         return cost
 
 class RBFMMDLoss:
-    """Computes a MMD loss using the Guassian Radial Basis Kernel
+    """Computes a MMD loss using the Gaussian Radial Basis Kernel
      using the analytic form.
      """
     def __init__(self, kernel=gaussian_kernel_matrix, length_scale=1.0):
@@ -74,6 +74,17 @@ class RBFMMDLoss:
         return cost
 
 
+class WassersteinLoss:
+
+    def __init__(self, degree):
+        self.degree = degree
+
+    def __call__(self, total_increments, integrated_var):
+        gen_sample = total_increments / tf.math.sqrt(integrated_var)
+        gen_sample = tf.reshape(gen_sample, (gen_sample.shape[0], 1))
+        #TODO: finish
+        pass
+
 
 
 @tf.function
@@ -84,24 +95,19 @@ def create_train_dataset(x_train, batch_size):
     train_dataset = train_dataset.batch(batch_size)
     return train_dataset
 
-
+@tf.function
 def _mse_metric(var_true, var_pred):
     """Calculates the MSE between the predicted integrated variance and
     true integrated variance"""
     return tf.reduce_mean((var_true - var_pred)**2)
 
 
-class FFNetwork(Model):
-    def __init__(self, n_layers, h_dims=64, loss=None):
+
+
+
+class IVModel(Model):
+    def __init__(self):
         super().__init__()
-        layers = []
-        for _ in range(n_layers):
-            layers.append(Dense(h_dims, activation='relu'))
-        layers.append(Dense(h_dims, activation=None))
-        layers.append(Dense(1, activation='softplus'))
-        self.h_layers = layers
-        self.loss = loss
-        self.optimizer = Adam(lr=0.001)
 
     def call(self, x):
         for layer in self.h_layers:
@@ -116,7 +122,7 @@ class FFNetwork(Model):
             self.optimizer = Adam(lr=lr)
 
     def train_step(self, x_batch):
-        total_increment = x_batch[:, -1] - x_batch[:, 0]
+        total_increment = tf.squeeze(x_batch[:, -1, 0] - x_batch[:, 0, 0])
         with tf.GradientTape() as tape:
             int_var = self(x_batch)
             int_var = tf.squeeze(int_var)
@@ -155,3 +161,38 @@ class FFNetwork(Model):
         iv = self.predict_iv(x)
         z = (x[:,-1] - x[:,0])/np.sqrt(iv)
         return z
+
+
+class FFNetwork(IVModel):
+    def __init__(self, n_layers, h_dims=64, loss=None, **kwargs):
+        super().__init__()
+        layers = []
+        for _ in range(n_layers):
+            layers.append(Dense(h_dims, activation='relu'))
+        layers.append(Dense(h_dims, activation=None))
+        layers.append(Dense(1, activation='softplus'))
+        self.h_layers = layers
+        self.loss = loss
+
+        lr = kwargs.pop('lr', 0.001)
+        self.optimizer = Adam(lr=lr)
+
+
+
+
+class RNNNetwork(IVModel):
+    def __init__(self, n_layers, h_dims=64, recurrent_type='rnn', loss=None, **kwargs):
+        super().__init__()
+        layers = []
+        h_layer = SimpleRNN if recurrent_type == 'rnn' else LSTM
+        for _ in range(n_layers):
+            layers.append(h_layer(h_dims, return_sequences=True))
+        layers.append(h_layer(h_dims, return_sequences=False))
+        for _ in range(n_layers):
+            layers.append(Dense(h_dims, activation='relu'))
+        layers.append(Dense(1, activation='softplus'))
+        self.h_layers = layers
+        self.loss = loss
+
+        lr = kwargs.pop('lr', 0.001)
+        self.optimizer = Adam(lr=lr)
