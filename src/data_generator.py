@@ -96,7 +96,7 @@ class SemiMartingale:
         self.n_paths = n_paths
         self.n_timesteps = n_timesteps
         self.total_timesteps = total_timesteps
-        return X
+        return np.array(X, dtype='float32')
 
     def generate_from_vol(self, seed=None):
         """

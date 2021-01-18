@@ -1,14 +1,11 @@
 import numpy as np
 import tensorflow as tf
-import tensorflow.keras.backend as K
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.optimizers import Adam
 from scipy.special import factorial
 from tqdm import tqdm_notebook
 from src.utils import *
-
-K.set_floatx('float64')
 
 
 class MomentLoss:
@@ -31,9 +28,9 @@ class MomentLoss:
     def __call__(self, total_increments, integrated_var):
         gaussian_moments = tf.constant([gaussian_moment(p) for p in range(1, self.degree+1)])
         z_sample = total_increments / tf.math.sqrt(integrated_var)
-        sample_moments = tf.stack([K.mean(z_sample**p, axis=0) for p in range(1, self.degree+1)])
+        sample_moments = tf.stack([tf.reduce_mean(z_sample**p, axis=0) for p in range(1, self.degree+1)])
         moment_diffs = tf.math.abs(sample_moments - gaussian_moments)
-        return K.mean(self.weights * moment_diffs**self.p_norm)
+        return tf.reduce_mean(self.weights * moment_diffs**self.p_norm)
 
 class MMDLoss:
     """Computes a MMD loss using a kernel function (the Guassian Radial Basis Kernel
@@ -52,7 +49,7 @@ class MMDLoss:
     def __call__(self, total_increments, integrated_var):
         gen_sample = total_increments / tf.math.sqrt(integrated_var)
         gen_sample = tf.reshape(gen_sample, (gen_sample.shape[0], 1))
-        z_sample = tf.random.normal(shape=gen_sample.get_shape(), dtype='float64')
+        z_sample = tf.random.normal(shape=gen_sample.get_shape(), dtype=tf.float32)
         cost = tf.reduce_mean(self.kernel(gen_sample, gen_sample))
         cost += tf.reduce_mean(self.kernel(z_sample, z_sample))
         cost -= tf.reduce_mean(2*self.kernel(gen_sample, z_sample))
@@ -72,7 +69,7 @@ class RBFMMDLoss:
         gen_sample = total_increments / tf.math.sqrt(integrated_var)
         gen_sample = tf.reshape(gen_sample, (gen_sample.shape[0], 1))
         cost = tf.reduce_mean(self.kernel(gen_sample, gen_sample))
-        cost -= (self.length_scale/(1 + self.length_scale))**0.5 * tf.reduce_mean(2*K.exp(-gen_sample**2/(2*(1 + self.length_scale))))
+        cost -= (self.length_scale/(1 + self.length_scale))**0.5 * tf.reduce_mean(2*tf.exp(-gen_sample**2/(2*(1 + self.length_scale))))
         #No need for last term since that is independent of the training data
         return cost
 
@@ -96,7 +93,7 @@ def _mse_metric(var_true, var_pred):
 
 class FFNetwork(Model):
     def __init__(self, n_layers, h_dims=64, loss=None):
-        super(FFNetwork, self).__init__()
+        super().__init__()
         layers = []
         for _ in range(n_layers):
             layers.append(Dense(h_dims, activation='relu'))
