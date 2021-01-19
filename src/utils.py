@@ -89,6 +89,14 @@ def plot_hist(x_batch, int_var, true_int_var=None, n_bins=20):
     plt.legend()
     plt.show()
 
+def plot_loss(losses):
+    plt.plot(losses,'r--')
+    plt.grid()
+    plt.title("Loss During Training")
+    plt.xlabel("Training Step")
+    plt.ylabel("Loss")
+    plt.show()
+    
 def set_plot_params():
     """Useful function to set parameters for inline matplotlib plots
     in Jupyter notebooks.
@@ -108,3 +116,22 @@ def set_plot_params():
         'legend.frameon': False,
         'animation.html': 'html5'
     })
+
+
+
+
+@tf.function
+def create_train_dataset(x_train, batch_size):
+    """Creates a batched dataset from a given numpy array
+    """
+    train_dataset = tf.data.Dataset.from_tensor_slices(x_train)
+    train_dataset = train_dataset.batch(batch_size)
+    return train_dataset
+
+@tf.function
+def _mse_metric(var_true, var_pred):
+    """Calculates the MSE between the predicted integrated variance and
+    true integrated variance"""
+    return tf.reduce_mean((var_true - var_pred)**2)
+
+
