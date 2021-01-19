@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-from src.stoch_vol import ExpOU
+from src.vols.expOU import ExpOU
 
 class SemiMartingale:
 
