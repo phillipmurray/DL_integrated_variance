@@ -22,7 +22,7 @@ class CNNetwork(IVModel):
         layers.append(MaxPooling1D(pool_size=2))
         layers.append(Flatten())
         layers.append(Dense(100, activation='relu'))
-        layers.append(Dense(n_outputs, activation='softmax')) 
+        layers.append(Dense(n_outputs,activation='relu')) 
         self.h_layers = layers
         self.loss = loss
         self.optimizer = Adam(lr=0.001)
