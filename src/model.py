@@ -22,23 +22,6 @@ class WassersteinLoss:
 
 
 
-@tf.function
-def create_train_dataset(x_train, batch_size):
-    """Creates a batched dataset from a given numpy array
-    """
-    train_dataset = tf.data.Dataset.from_tensor_slices(x_train)
-    train_dataset = train_dataset.batch(batch_size)
-    return train_dataset
-
-@tf.function
-def _mse_metric(var_true, var_pred):
-    """Calculates the MSE between the predicted integrated variance and
-    true integrated variance"""
-    return tf.reduce_mean((var_true - var_pred)**2)
-
-
-
-
 
 
 
