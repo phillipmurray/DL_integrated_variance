@@ -6,6 +6,9 @@ from tensorflow.keras.optimizers import Adam
 from scipy.special import factorial
 from tqdm import tqdm_notebook
 from src.utils import *
+from tensorflow.keras.losses import mean_squared_error
+
+
 
 
 class IVModel(Model):
@@ -34,7 +37,7 @@ class IVModel(Model):
         self.optimizer.apply_gradients(zip(grads, self.trainable_weights))
         return loss_value
 
-    def train(self, x_train, num_epochs, batch_size, lr=None, true_int_var=None, plotting=True):
+    def train(self, x_train, num_epochs, batch_size, lr=None, true_int_var=None, show_loss = True, show_hist=True):
         self._set_lr(lr)
         n_steps = x_train.shape[0] // batch_size
         x_train = create_train_dataset(x_train, batch_size)
@@ -46,11 +49,13 @@ class IVModel(Model):
                     progress.update()
                     loss_val = self.train_step(x_batch)
                     losses.append(loss_val.numpy())
+            if show_loss:
+                plot_loss(losses)
             int_var = self(x_batch).numpy().squeeze()
             if true_int_var:
                 mse_val = _mse_metric(true_int_var, int_var)
                 mses.append(mse_val.numpy())
-            if plotting:
+            if show_hist:
                 plot_hist(x_batch, int_var, true_int_var)
 
         self.history = {'loss': losses, 'mse': mses}
