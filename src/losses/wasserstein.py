@@ -19,5 +19,4 @@ class Wasserstein2Loss:
         cost = tf.math.abs(sample_mean -self.mean)
         cost += self.variance + sample_variance 
         cost -= 2*tf.math.sqrt(sample_variance*self.variance)
-        print(cost)
         return cost
