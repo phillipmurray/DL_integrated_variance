@@ -7,4 +7,6 @@ class WassersteinLoss:
         self.std = std
         
     def __call__(self, prediction,  ):
+        pass
+
 

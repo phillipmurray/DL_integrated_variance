@@ -1,10 +1,6 @@
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Dense, SimpleRNN, LSTM
-from tensorflow.keras.optimizers import Adam
 from scipy.special import factorial
-from tqdm import tqdm_notebook
 from src.utils import *
 
 
