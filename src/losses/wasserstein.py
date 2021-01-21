@@ -11,6 +11,7 @@ class Wasserstein2Loss:
         self.mean = mean
         self.variance = variance
         
+<<<<<<< HEAD
     def __call__(self, total_increments, integrated_var):
         gen_sample = total_increments / tf.cast(tf.math.sqrt(integrated_var),tf.float32)
         gen_sample = tf.reshape(gen_sample, (gen_sample.shape[0], 1))
@@ -21,3 +22,9 @@ class Wasserstein2Loss:
         cost -= 2*tf.math.sqrt(sample_variance*self.variance)
         print(cost)
         return cost
+=======
+    def __call__(self, prediction,  ):
+        pass
+
+
+>>>>>>> ae60d4eedee6aec8394863c634ca1758d954506c
