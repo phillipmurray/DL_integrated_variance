@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-from src.vols.expOU import ExpOU
+from .vols.model_selector import model_selector
 
 class SemiMartingale:
 
@@ -58,9 +58,7 @@ class SemiMartingale:
             else:
                 return vol
         elif isinstance(vol, str):
-            if vol == 'expou':
-                theta, beta = kwargs.get('theta', 1.0), kwargs.get('beta', 0.2)
-                return ExpOU(theta, beta).generate(n_paths, total_timesteps, n_timesteps, seed)
+            return model_selector(vol, kwargs)
 
 
     def generate(self, n_paths, total_timesteps, n_timesteps=None, seed=None, **kwargs):
@@ -176,6 +174,16 @@ class SemiMartingale:
         """
         if self.paths is not None:
             return self.paths[:,-1] - self.paths[:,0]
+    
+    def get_log_returns(self):
+        """
+            Calculate log-returns. log(p_t) - log(p_t-1)
+
+            Returns:
+            -----------
+            numpy array of the price log-returns for each path
+        """
+        return np.log(self.paths[:,1:]) - np.log(self.paths[:,:-1])
 
     def get_norm_increments(self):
         """
