@@ -19,6 +19,7 @@ class Heston(SemiMartingale):
 
         v_0 = kwargs.get('v_0', self.omega)
         x_0 = kwargs.get('x_0', 1.0)
+        reshape_for_rnn = kwargs.get('reshape_for_rnn', False)
 
         total_timesteps = int(total_timesteps)
         self.total_timesteps = total_timesteps
@@ -46,7 +47,11 @@ class Heston(SemiMartingale):
         
         vol = np.sqrt(var)
         
-        self.paths = spot
-        self.vol_paths = vol
+        if reshape_for_rnn:
+            spot = np.expand_dims(spot, -1)
+            vol = np.expand_dims(vol, -1)
 
-        return spot, vol
+        self.paths = spot.astype('float32')
+        self.vol_paths = vol.astype('float32')
+
+        return self.paths, self.vol_paths

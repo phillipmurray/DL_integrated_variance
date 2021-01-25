@@ -12,8 +12,10 @@ class RBFMMDLoss:
 
     def __call__(self, total_increments, integrated_var):
         gen_sample = total_increments / tf.math.sqrt(integrated_var)
-        gen_sample = tf.reshape(gen_sample, (gen_sample.shape[0], 1))
-        cost = tf.reduce_mean(self.kernel(gen_sample, gen_sample))
-        cost -= (self.length_scale/(1 + self.length_scale))**0.5 * tf.reduce_mean(2*tf.exp(-gen_sample**2/(2*(1 + self.length_scale))))
-        #No need for last term since that is independent of the training data
+        n = gen_sample.shape[0]
+        gen_sample = tf.reshape(gen_sample, (n, 1))
+        cost = (self.length_scale/(2 + self.length_scale))**0.5
+        cost += 1/n/(n-1)*tf.reduce_sum(self.kernel(gen_sample, gen_sample))
+        cost -= 1/(n-1)
+        cost -= 2*(self.length_scale/(1 + self.length_scale))**0.5 * tf.reduce_mean(tf.exp(-gen_sample**2/(2*(1 + self.length_scale))))
         return cost

@@ -25,7 +25,7 @@ class SemiMartingale:
             -----------
             numpy array of integrated variance for each path
         """
-        int_var = np.sum(self.vol_paths**2, axis=-1)/self.total_timesteps
+        int_var = np.sum(self.vol_paths**2, axis=1)/self.total_timesteps
         if return_mean:
             int_var = np.mean(int_var, axis=0)
         return int_var

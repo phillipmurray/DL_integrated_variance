@@ -37,7 +37,7 @@ class IVModel(Model):
         self.optimizer.apply_gradients(zip(grads, self.trainable_weights))
         return loss_value
 
-    def train(self, x_train, num_epochs, batch_size, lr=None, true_int_var=None, show_loss = True, show_hist=True):
+    def train(self, x_train, num_epochs, batch_size, lr=None, true_int_var=None, show_loss = True, show_hist=False):
         self._set_lr(lr)
         n_steps = x_train.shape[0] // batch_size
         x_train = create_train_dataset(x_train, batch_size)
