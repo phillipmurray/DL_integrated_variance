@@ -16,7 +16,7 @@ class Wasserstein2Loss:
         gen_sample = tf.reshape(gen_sample, (gen_sample.shape[0], 1))
         sample_mean = tf.reduce_mean(gen_sample)
         sample_variance = tf.math.reduce_std(gen_sample)**2
-        cost = tf.math.abs(sample_mean -self.mean)
+        cost = tf.math.abs(sample_mean - self.mean)
         cost += self.variance + sample_variance 
         cost -= 2*tf.math.sqrt(sample_variance*self.variance)
         return cost
