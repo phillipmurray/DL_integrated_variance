@@ -29,7 +29,7 @@ class IVGan:
             critic_loss = tf.reduce_mean(self.critic(fake_sample) -self.critic(true_sample))
         grads = tape.gradient(critic_loss, self.critic.trainable_weights)
         self.optimizer.apply_gradients(zip(grads, self.critic.trainable_weights))
-        self._clip_critic_weights(clip)
+        #self._clip_critic_weights(clip)
         return critic_loss
 
     def train_generator(self, x_batch):
