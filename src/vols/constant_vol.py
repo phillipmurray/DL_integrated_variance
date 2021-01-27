@@ -3,12 +3,10 @@ from src.vols.base import SemiMartingale
 
 class ConstantVol(SemiMartingale):
 
-    def __init__(self, mu=1.0, sigma=0.04):
+    def __init__(self, sigma=0.04):
         """Constant Volatility Model.
-        mu: trend
         sigma: vol
          """
-        self.mu = mu
         self.sigma = sigma
         
     def generate(self, n_paths, total_timesteps, n_timesteps=None, seed=None, **kwargs):
