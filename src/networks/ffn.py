@@ -1,16 +1,7 @@
-import numpy as np
-import tensorflow as tf
-import tensorflow.keras.backend as K
-from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Dense, Dropout, Flatten, MaxPooling1D, BatchNormalization, Conv1D
 from tensorflow.keras.optimizers import Adam
-from scipy.special import factorial
-from tqdm import tqdm_notebook
-from src.utils import *
+
 from src.networks.ivmodel import IVModel
-
-K.set_floatx('float64')
-
 
 class FFNetwork(IVModel):
     def __init__(self, n_layers, h_dims=64, loss=None, **kwargs):
