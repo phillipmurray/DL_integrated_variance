@@ -21,7 +21,7 @@ class IVGan:
     def train_critic(self, true_batch, fake_batch, clip):
         fake_iv = tf.squeeze(self.generator(fake_batch))
         fake_iv = np.abs(np.where(fake_iv ==0 , 0.000001, fake_iv))
-        fake_sample = (fake_batch[:,-1] - fake_batch[:,0])/np.sqrt(fake_iv)
+        fake_sample = (fake_batch[:,-1,:] - fake_batch[:,0,:])/np.sqrt(fake_iv)
         fake_sample = np.reshape(fake_sample,(fake_sample.shape[0],1))
         true_sample = np.reshape(true_batch,(true_batch.shape[0],1))
         with tf.GradientTape() as tape:
@@ -36,7 +36,7 @@ class IVGan:
         with tf.GradientTape() as tape:
             iv = tf.cast(tf.squeeze(self.generator(x_batch)),tf.float32)
             iv = tf.math.abs(tf.where(iv ==0 , 0.000001, iv))
-            gen_z = (x_batch[:,-1] - x_batch[:,0])/tf.math.sqrt(iv)
+            gen_z = (x_batch[:,-1,:] - x_batch[:,0,:])/tf.math.sqrt(iv)
             gen_z = tf.reshape(gen_z,(gen_z.shape[0],1))
             generator_loss = -tf.reduce_mean(self.critic(gen_z))
         grads = tape.gradient(generator_loss, self.generator.trainable_weights)
