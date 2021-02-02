@@ -121,11 +121,11 @@ def set_plot_params():
 
 
 @tf.function
-def create_train_dataset(x_train, batch_size):
+def create_train_dataset(x_train, batch_size, drop_remainder = False):
     """Creates a batched dataset from a given numpy array
     """
     train_dataset = tf.data.Dataset.from_tensor_slices(x_train)
-    train_dataset = train_dataset.batch(batch_size)
+    train_dataset = train_dataset.batch(batch_size, drop_remainder = drop_remainder)
     return train_dataset
 
 @tf.function
