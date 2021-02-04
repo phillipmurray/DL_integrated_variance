@@ -26,12 +26,18 @@ class IVGan:
         true_sample = np.reshape(true_batch,(true_batch.shape[0],1))
         with tf.GradientTape() as tape:
             #we want to maximise so we need to put "-"
-            mean_fake = tf.reduce_mean(self.critic(fake_sample))
-            mean_true = tf.reduce_mean(self.critic(true_sample))
             critic_loss = tf.reduce_mean(self.critic(fake_sample) -self.critic(true_sample))
+            epsilon = tf.random.uniform([1], 0,1)
+            x_hat = epsilon * fake_sample + (1-epsilon)*true_sample
+            with tf.GradientTape() as gp_tape:
+                #GP stands for Gradient Penalty
+                gp_tape.watch(x_hat)
+                y_hat = self.critic(x_hat)
+            gradient_norm = tf.norm(gp_tape.gradient(y_hat,x_hat))
+            critic_loss += clip*tf.math.square((gradient_norm-1)) 
         grads = tape.gradient(critic_loss, self.critic.trainable_weights)
         self.critic.optimizer.apply_gradients(zip(grads, self.critic.trainable_weights))
-        self._clip_critic_weights(clip)
+        #self._clip_critic_weights(clip)
         return critic_loss
 
     def train_generator(self, x_batch):
