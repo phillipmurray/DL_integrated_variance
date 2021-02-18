@@ -16,7 +16,8 @@ class CNNetwork(IVModel):
         self.features = n_features
         self.outputs = n_outputs
         layers = []
-        layers.append(Conv1D(filters=64, kernel_size=3, activation='relu', input_shape=(n_timesteps,n_features)))
+        layers.append(Reshape((n_timesteps,n_features,1),input_shape=(n_timesteps,n_features)))
+        layers.append(Conv1D(filters=64, kernel_size=3, activation='relu'))
         layers.append(Dropout(0.5))
         layers.append(MaxPooling1D(pool_size=2))
         layers.append(Flatten())

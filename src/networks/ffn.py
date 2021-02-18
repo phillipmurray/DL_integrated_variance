@@ -1,6 +1,6 @@
-from tensorflow.keras.layers import Dense, Dropout, Flatten, MaxPooling1D, BatchNormalization, Conv1D
+from tensorflow.keras.layers import Dense, Dropout, Flatten, MaxPooling1D, BatchNormalization, Conv1D,Lambda
 from tensorflow.keras.optimizers import Adam
-
+import tensorflow as tf
 from src.networks.ivmodel import IVModel
 
 class FFNetwork(IVModel):
@@ -17,6 +17,7 @@ class FFNetwork(IVModel):
         if batch_norm:
                 layers.append(BatchNormalization())
         layers.append(Dense(1, activation='softplus'))
+        layers.append(Lambda(tf.math.abs))
         self.h_layers = layers
         self.loss = loss
 
