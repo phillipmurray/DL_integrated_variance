@@ -9,7 +9,7 @@ class RandomVol(SemiMartingale):
          """
         self.distribution = distribution
         
-    def generate(self, n_paths, total_timesteps, n_timesteps=None, seed=None, **kwargs):
+    def generate(self, n_paths, total_timesteps, n_timesteps=None, seed=None, reshape_for_rnn=None, **kwargs):
         self.seed=seed
         np.random.seed(seed)
 
@@ -26,14 +26,15 @@ class RandomVol(SemiMartingale):
         dt = 1/total_timesteps
         
         var = np.zeros((n_paths, n_timesteps))
-        var[:,0] = self.distribution(n_paths)**2
+        var[:,0] = self.distribution(size=n_paths,**kwargs)**2
+   
         
         spot = np.zeros_like(var)
         spot[:,0] = x_0 
 
         for t in range(1, n_timesteps):
             dW= np.random.normal(size=n_paths, loc=0.0,  scale=np.sqrt(dt))
-            sigma = self.distribution(n_paths)
+            sigma = self.distribution(size=n_paths,**kwargs)
             var[:,t] = sigma**2
             
             spot[:,t] = spot[:,t-1] + sigma*dW
